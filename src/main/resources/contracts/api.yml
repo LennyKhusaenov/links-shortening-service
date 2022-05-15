@@ -1,0 +1,186 @@
+openapi: 3.0.1
+info:
+  title: "links-shortening-service"
+  version: "0.0.1-alpha"
+paths:
+  '/generate':
+    post:
+      tags:
+        - links
+      operationId: generateShortLink
+      summary: Метод позволяет сгенерировать короткую ссылку по входящей ссылке
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OriginalLink'
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShortLink'
+        '400':
+          description: Код возвращается в случае если допущена ошибка в HTTP запросе
+          content:
+            application/json:
+              example:
+                timestamp: '2022-05-13T11:46:49.349+00:00'
+                path: /generate
+                status: 400
+                error: Bad Request
+                requestId: e123127f-7242354
+        '405':
+          description: >-
+            Код возвращается в случае, если запрошен неподдерживаемый тип HTTP
+            запроса. Доступный тип: POST
+        '500':
+          description: >-
+            Код возвращается в случае внутренней ошибки системы. Например, если
+            не доступна база с данными
+  '/l/{link}':
+    get:
+      tags:
+        - links
+      operationId: redirectToLink
+      parameters:
+        - name: link
+          in: path
+          description: Ссылка для редиректа
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            example: /l/some-short-name
+      responses:
+        '301':
+          description: Moved permanently
+        '400':
+          description: Код возвращается в случае если допущена ошибка в HTTP запросе
+        '405':
+          description: >-
+            Код возвращается в случае, если запрошен неподдерживаемый тип HTTP
+            запроса. Доступный тип: POST
+        '500':
+          description: >-
+            Код возвращается в случае внутренней ошибки системы. Например, если
+            не доступна база с данными
+  '/stats/{link}':
+    get:
+      tags:
+        - links
+      operationId: findStatsForLink
+      parameters:
+        - name: link
+          in: path
+          description: Ссылка для получения статистики
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            example: /l/some-short-name
+      responses:
+        '200':
+          description: Статистика переходов по конкретной ссылке
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Statistics'
+        '400':
+          description: Код возвращается в случае если допущена ошибка в HTTP запросе
+        '405':
+          description: >-
+            Код возвращается в случае, если запрошен неподдерживаемый тип HTTP
+            запроса. Доступный тип: POST
+        '500':
+          description: >-
+            Код возвращается в случае внутренней ошибки системы. Например, если
+            не доступна база с данными
+  '/stats':
+    get:
+      tags:
+        - links
+      operationId: findAllStats
+      parameters:
+        - name: page
+          in: query
+          description: Страница при постраничном просмотре
+          schema:
+            type: integer
+            minimum: 0
+            example: 1
+        - name: count
+          in: query
+          description: Количество записей на страницек
+          schema:
+            type: integer
+            minimum: 0
+            example: 1
+      responses:
+        '200':
+          description: Статистика переходов по конкретной ссылке
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Statistics'
+        '400':
+          description: Код возвращается в случае если допущена ошибка в HTTP запросе
+        '405':
+          description: >-
+            Код возвращается в случае, если запрошен неподдерживаемый тип HTTP
+            запроса. Доступный тип: POST
+        '500':
+          description: >-
+            Код возвращается в случае внутренней ошибки системы. Например, если
+            не доступна база с данными
+
+components:
+  schemas:
+    Statistics:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ShortLink'
+        - $ref: '#/components/schemas/OriginalLink'
+        - type: object
+          properties:
+            rank:
+              type: integer
+              description: место по количеству переходов
+              example: 1
+        - type: object
+          properties:
+            count:
+              type: integer
+              format: int64
+              description: количество переходов
+              example: 100500
+    OriginalLink:
+      type: object
+      required:
+        - original
+      properties:
+        original:
+          type: string
+          minLength: 1
+          description: Исходная строка
+          example: https://some-server.com/some/url?some_param=1
+          pattern: 'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)'
+    ShortLink:
+      type: object
+      properties:
+        link:
+          type: string
+          description: Укороченный вариант исходной строки
+          example: /l/some-short-name
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time

@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: links-shortening-service
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${HIKARI_POOL_SIZE:10}
+    jpa:
+      database-platform: org.hibernate.dialect.PostgreSQLDialect
+      generate-ddl: off
+      hibernate:
+        ddl-auto: validate
+  liquibase:
+    change-log: classpath:/db/changelog.xml
+  jpa:
+    properties:
+      hibernate:
+        globally_quoted_identifiers: true
